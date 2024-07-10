@@ -1,4 +1,4 @@
-dataset/
+dataset/imgs/
 __pycache__/
 wandb/
 checkpoint/
