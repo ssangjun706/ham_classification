@@ -2,6 +2,7 @@ import os
 from torch.utils.data import Dataset, random_split
 import pandas as pd
 import torch
+import torch.nn as nn
 from PIL import Image
 import torchvision.transforms as T
 
@@ -13,6 +14,7 @@ class HAM10000(Dataset):
         self,
         image_dir,
         label_path,
+        image_size,
         train=True,
         ratio=0.9,
     ):
@@ -33,16 +35,16 @@ class HAM10000(Dataset):
         for key, label in zip(_df[:, 0], _df[:, 1:]):
             self.labels[key] = label.astype(float)
 
-        self.transform = T.Compose([T.Resize((450, 450)), T.ToTensor()])
+        self.transform = T.Compose([T.Resize((image_size, image_size)), T.ToTensor()])
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        _img_path = os.path.join(self.image_dir, self.images[idx])
-        image = self.transform(Image.open(_img_path))
-        _label = self.labels[self.images[idx].split(".")[0]]
-        label = torch.tensor(_label, dtype=torch.float32)
+        img_path = os.path.join(self.image_dir, self.images[idx])
+        image = self.transform(Image.open(img_path))
+        label = self.labels[self.images[idx].split(".")[0]]
+        label = torch.tensor(label, dtype=torch.float32)
         return image, label
 
 

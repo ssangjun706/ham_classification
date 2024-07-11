@@ -23,7 +23,6 @@ class ResidualBlock(nn.Module):
 
     def forward(self, x):
         if self.skip is True:
-            breakpoint()
             out = x + self.layer(x)
             out = self.activate(out)
         else:
