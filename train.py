@@ -9,6 +9,7 @@ from test import test
 from data import HAM10000, train_test_split
 
 from model.vit import ViT
+from model.vit import ViT as ViT_Torch
 
 from model.resnet import ResNet50
 from utils import init_weight
@@ -27,6 +28,7 @@ def train(model, train_loader, val_loader, device):
     optim = torch.optim.Adam(
         model.parameters(), betas=(0.9, 0.999), weight_decay=0.9, lr=args.lr
     )
+    scheduler = lr_scheduler.CosineAnnealingLR(optim, T_max=args.epochs, eta_min=1e-7)
 
     best_loss, best_model = 0, model
     for epoch in range(args.epochs):
@@ -42,6 +44,7 @@ def train(model, train_loader, val_loader, device):
                 optim.step()
                 optim.zero_grad()
 
+        scheduler.step()
         train_loss /= len(train_loader)
 
         val_loss, accuracy = test(model, val_loader, device)
@@ -69,6 +72,7 @@ def main():
         image_dir=args.image_dir,
         label_path=args.label_path,
         image_size=args.image_size,
+        crop_size=args.crop_size,
     )
 
     train_data, val_data = train_test_split(dataset)
@@ -88,7 +92,14 @@ def main():
     )
 
     model = (
-        ViT(
+        # ViT(
+        #     image_size=args.image_size,
+        #     patch_size=args.patch_size,
+        #     h_dim=args.h_dim,
+        #     mlp_dim=args.mlp_dim,
+        #     num_classes=args.num_classes,
+        # )
+        ViT_Torch(
             image_size=args.image_size,
             patch_size=args.patch_size,
             h_dim=args.h_dim,
@@ -98,11 +109,11 @@ def main():
         if args.model == "vit"
         else ResNet50()
     )
-    model = nn.DataParallel(model)
 
     if args.use_checkpoint and os.path.exists(args.checkpoint):
         model.load_state_dict(torch.load(args.checkpoint, map_location=device))
 
+    model = nn.DataParallel(model)
     model.to(device)
     model.apply(init_weight)
 

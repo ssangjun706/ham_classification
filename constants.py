@@ -1,14 +1,15 @@
-image_dir = "dataset/imgs"
-label_path = "dataset/label.csv"
+image_dir = "../../data/ham10000/imgs"
+label_path = "../../data/ham10000/label.csv"
 
 batch_size = 256
-epochs = 25
-lr = 1e-3
+epochs = 20
+lr = 5e-4
 
 patch_size = 16
 h_dim = 768
 mlp_dim = 3072
-image_size = 432
+crop_size = 360
+image_size = 240
 num_classes = 7
 
 num_workers = 32

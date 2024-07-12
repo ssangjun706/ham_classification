@@ -1,5 +1,17 @@
-import torch.nn as nn
 import torch
+from torch import nn
+
+from model.transformer import Transformer
+
+
+class Reshape(nn.Module):
+    def __init__(self, reshape):
+        super().__init__()
+        self.reshape = reshape
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+        return x.view((batch_size, *self.reshape))
 
 
 class PositionalEmbedding(nn.Module):
@@ -43,37 +55,33 @@ class ViT(nn.Module):
         seq_len = (image_size // patch_size) ** 2
         in_features = (patch_size**2) * 3
 
-        self.cls_token = nn.Parameter(torch.randn((1, h_dim)))
-        self.to_patch = nn.Unfold(kernel_size=patch_size, stride=patch_size)
-        self.embed = nn.Sequential(
-            nn.Linear(in_features, h_dim), nn.BatchNorm2d(h_dim), nn.ReLU()
+        self.patch_embedding = nn.Sequential(
+            nn.Unfold(kernel_size=patch_size, stride=patch_size),
+            Reshape((seq_len, in_features)),
+            nn.LayerNorm(in_features),
+            nn.Linear(in_features, h_dim),
+            nn.LayerNorm(h_dim),
         )
 
-        self.pe = nn.Sequential(
-            PositionalEmbedding(seq_len + 1, h_dim),
-            nn.Dropout(0.1),
-        )
+        self.cls_token = nn.Parameter(torch.randn((1, 1, h_dim)))
+        self.pe = PositionalEmbedding(seq_len + 1, h_dim)
 
-        _encoder_layer = nn.TransformerEncoderLayer(
-            d_model=h_dim,
-            nhead=nhead,
-            dim_feedforward=mlp_dim,
-        )
+        # encoder_layer = nn.TransformerEncoderLayer(
+        #     d_model=h_dim,
+        #     nhead=nhead,
+        #     dim_feedforward=mlp_dim,
+        # )
 
-        self.transformer = nn.TransformerEncoder(
-            _encoder_layer,
-            num_layers=num_layers,
-            norm=nn.LayerNorm(h_dim),
-        )
-
-        self.mlp = nn.Linear(h_dim, num_classes)
+        # self.transformer = nn.TransformerEncoder(
+        #     encoder_layer=encoder_layer, num_layers=num_layers, norm=nn.LayerNorm(h_dim)
+        # )
+        self.transformer = Transformer(h_dim, num_layers, nhead, 64, mlp_dim)
+        self.mlp = nn.Sequential(nn.Identity(), nn.Linear(h_dim, num_classes))
 
     def forward(self, x):
+        x = self.patch_embedding(x)
         cls_token = self.cls_token.expand((x.shape[0], 1, self.h_dim))
-        x = self.to_patch(x).permute(0, 2, 1)
-        x = torch.concat((cls_token, self.embed(x)), dim=1)
+        x = torch.cat((cls_token, x), dim=1)
         x = self.pe(x)
-
-        out = self.transformer(x)
-        pred = self.mlp(out[:, 0, :])
-        return pred
+        x = self.transformer(x)
+        return self.mlp(x[:, 0])

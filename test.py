@@ -18,7 +18,7 @@ def test(model, data_loader, device):
     avg_loss, accr = 0, 0
 
     model.eval()
-    with tqdm(data_loader, desc="Validation") as pbar:
+    with tqdm(data_loader, desc="Test") as pbar:
         for X, y in pbar:
             X, y = X.to(device), y.to(device)
             pred = model(X)
@@ -41,9 +41,8 @@ def main():
     test_loader = DataLoader(
         dataset=dataset,
         batch_size=args.batch_size,
-        shuffle=True,
-        drop_last=True,
         num_workers=args.num_workers,
+        drop_last=True,
     )
 
     model = ViT(
@@ -53,14 +52,15 @@ def main():
         mlp_dim=args.mlp_dim,
         num_classes=args.num_classes,
     )
+
+    if os.path.exists(args.checkpoint):
+        model.load_state_dict(torch.load(args.checkpoint, map_location=device))
+
     model = nn.DataParallel(model)
-
-    if os.path.exists(args.checkpoint_vit):
-        model.load_state_dict(torch.load(args.checkpoint_vit, map_location=device))
-
     model.to(device)
-    accr = test(model, test_loader, device)
-    print(f"Accuracy: {accr * 100 :.2f}%")
+
+    _, accr = test(model, test_loader, device)
+    print(f"Accuracy: {accr * 100 :.4f}%")
 
 
 if __name__ == "__main__":
