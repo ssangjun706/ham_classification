@@ -9,7 +9,6 @@ from test import test
 from data import HAM10000, train_test_split
 
 from model.vit import ViT
-from model.vit import ViT as ViT_Torch
 
 from model.resnet import ResNet50
 from utils import init_weight
@@ -92,14 +91,7 @@ def main():
     )
 
     model = (
-        # ViT(
-        #     image_size=args.image_size,
-        #     patch_size=args.patch_size,
-        #     h_dim=args.h_dim,
-        #     mlp_dim=args.mlp_dim,
-        #     num_classes=args.num_classes,
-        # )
-        ViT_Torch(
+        ViT(
             image_size=args.image_size,
             patch_size=args.patch_size,
             h_dim=args.h_dim,

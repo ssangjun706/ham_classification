@@ -15,7 +15,6 @@ class HAM10000(Dataset):
         image_dir,
         label_path,
         image_size,
-        crop_size,
         train=True,
         ratio=0.9,
     ):
@@ -36,23 +35,12 @@ class HAM10000(Dataset):
         for key, label in zip(_df[:, 0], _df[:, 1:]):
             self.labels[key] = label.astype(float)
 
-        if train is True:
-            self.transform = T.Compose(
-                [
-                    T.CenterCrop(crop_size),
-                    T.Resize((image_size, image_size)),
-                    T.RandomHorizontalFlip(),
-                    T.ToTensor(),
-                ]
-            )
-        else:
-            self.transform = T.Compose(
-                [
-                    T.CenterCrop(crop_size),
-                    T.Resize((image_size, image_size)),
-                    T.ToTensor(),
-                ]
-            )
+        self.transform = T.Compose(
+            [
+                T.Resize((image_size, image_size)),
+                T.ToTensor(),
+            ]
+        )
 
     def __len__(self):
         return len(self.images)

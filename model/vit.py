@@ -55,12 +55,21 @@ class ViT(nn.Module):
         seq_len = (image_size // patch_size) ** 2
         in_features = (patch_size**2) * 3
 
+        self.conv = nn.Sequential(
+            nn.Conv2d(3, 32, 3),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+        )
+
         self.patch_embedding = nn.Sequential(
             nn.Unfold(kernel_size=patch_size, stride=patch_size),
             Reshape((seq_len, in_features)),
             nn.LayerNorm(in_features),
             nn.Linear(in_features, h_dim),
             nn.LayerNorm(h_dim),
+            nn.ReLU(),
         )
 
         self.cls_token = nn.Parameter(torch.randn((1, 1, h_dim)))
@@ -76,9 +85,10 @@ class ViT(nn.Module):
         #     encoder_layer=encoder_layer, num_layers=num_layers, norm=nn.LayerNorm(h_dim)
         # )
         self.transformer = Transformer(h_dim, num_layers, nhead, 64, mlp_dim)
-        self.mlp = nn.Sequential(nn.Identity(), nn.Linear(h_dim, num_classes))
+        self.mlp = nn.Linear(h_dim, num_classes)
 
     def forward(self, x):
+        x = self.conv(x)
         x = self.patch_embedding(x)
         cls_token = self.cls_token.expand((x.shape[0], 1, self.h_dim))
         x = torch.cat((cls_token, x), dim=1)

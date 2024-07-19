@@ -2,18 +2,17 @@ image_dir = "../../data/ham10000/imgs"
 label_path = "../../data/ham10000/label.csv"
 
 batch_size = 256
-epochs = 20
-lr = 5e-4
+epochs = 10
+lr = 1e-3
 
 patch_size = 16
 h_dim = 768
 mlp_dim = 3072
-crop_size = 360
-image_size = 240
+image_size = 450
 num_classes = 7
 
 num_workers = 32
-use_wandb = True
+use_wandb = False
 use_checkpoint = False
 
 model = "vit"
