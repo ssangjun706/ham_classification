@@ -1,7 +1,7 @@
 image_dir = "../../data/ham10000/imgs"
 label_path = "../../data/ham10000/label.csv"
 
-batch_size = 256
+batch_size = 64
 epochs = 10
 lr = 1e-3
 

@@ -17,10 +17,13 @@ class Reshape(nn.Module):
 class PositionalEmbedding(nn.Module):
     def __init__(self, seq_len, h_dim):
         super().__init__()
+
         self.seq_len = seq_len
         self.h_dim = h_dim
 
-        assert seq_len % 2 == 0, "Sequence length should be divided into 2."
+        if self.seq_len % 2 != 0:
+            self.seq_len += 1
+
         _seq = torch.arange(self.seq_len).reshape((-1, 1))
         _seq = _seq.expand((self.seq_len, self.h_dim))
 
@@ -31,10 +34,14 @@ class PositionalEmbedding(nn.Module):
         _pe = _seq / _freq
         _pe[:, ::2] = torch.sin(_pe[:, ::2])
         _pe[:, 1::2] = torch.cos(_pe[:, 1::2])
-        self.encoding = _pe
+
+        if seq_len % 2 == 0:
+            self.encoding = _pe
+        else:
+            self.encoding = _pe[:-1]
 
     def forward(self, x):
-        encoding = self.encoding.expand((x.shape[0], self.seq_len, self.h_dim))
+        encoding = self.encoding.expand(x.shape)
         encoding = encoding.to(x.device)
         return x + encoding
 
@@ -52,15 +59,18 @@ class ViT(nn.Module):
     ):
         super().__init__()
         self.h_dim = h_dim
-        seq_len = (image_size // patch_size) ** 2
-        in_features = (patch_size**2) * 3
 
+        image_size = 224
+
+        seq_len = (image_size // patch_size) ** 2
+        in_features = (patch_size**2) * 32
+
+        # 450 -> 224
         self.conv = nn.Sequential(
             nn.Conv2d(3, 32, 3),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
             nn.BatchNorm2d(32),
             nn.ReLU(),
+            nn.MaxPool2d(2),
         )
 
         self.patch_embedding = nn.Sequential(
@@ -75,15 +85,6 @@ class ViT(nn.Module):
         self.cls_token = nn.Parameter(torch.randn((1, 1, h_dim)))
         self.pe = PositionalEmbedding(seq_len + 1, h_dim)
 
-        # encoder_layer = nn.TransformerEncoderLayer(
-        #     d_model=h_dim,
-        #     nhead=nhead,
-        #     dim_feedforward=mlp_dim,
-        # )
-
-        # self.transformer = nn.TransformerEncoder(
-        #     encoder_layer=encoder_layer, num_layers=num_layers, norm=nn.LayerNorm(h_dim)
-        # )
         self.transformer = Transformer(h_dim, num_layers, nhead, 64, mlp_dim)
         self.mlp = nn.Linear(h_dim, num_classes)
 

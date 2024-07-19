@@ -2,12 +2,8 @@ import os
 from torch.utils.data import Dataset, random_split
 import pandas as pd
 import torch
-import torch.nn as nn
 from PIL import Image
 import torchvision.transforms as T
-
-# MEL,NV,BCC,AKIEC,BKL,DF,VASC
-
 
 class HAM10000(Dataset):
     def __init__(
@@ -16,7 +12,7 @@ class HAM10000(Dataset):
         label_path,
         image_size,
         train=True,
-        ratio=0.9,
+        ratio=0.6,
     ):
         self.image_dir = image_dir
         self.labels = dict()

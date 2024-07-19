@@ -19,7 +19,7 @@ import constants as args
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 def train(model, train_loader, val_loader, device):
@@ -71,7 +71,6 @@ def main():
         image_dir=args.image_dir,
         label_path=args.label_path,
         image_size=args.image_size,
-        crop_size=args.crop_size,
     )
 
     train_data, val_data = train_test_split(dataset)
@@ -105,12 +104,13 @@ def main():
     if args.use_checkpoint and os.path.exists(args.checkpoint):
         model.load_state_dict(torch.load(args.checkpoint, map_location=device))
 
-    model = nn.DataParallel(model)
+    # model = nn.DataParallel(model)
     model.to(device)
     model.apply(init_weight)
 
     best_model = train(model, train_loader, val_loader, device)
-    torch.save(best_model.module.state_dict(), args.checkpoint)
+    # torch.save(best_model.module.state_dict(), args.checkpoint)
+    torch.save(best_model.state_dict(), args.checkpoint)
 
 
 if __name__ == "__main__":
