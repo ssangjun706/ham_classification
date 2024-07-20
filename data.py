@@ -5,14 +5,15 @@ import torch
 from PIL import Image
 import torchvision.transforms as T
 
+
 class HAM10000(Dataset):
     def __init__(
         self,
         image_dir,
         label_path,
-        image_size,
+        resize,
         train=True,
-        ratio=0.6,
+        ratio=0.9,
     ):
         self.image_dir = image_dir
         self.labels = dict()
@@ -33,7 +34,7 @@ class HAM10000(Dataset):
 
         self.transform = T.Compose(
             [
-                T.Resize((image_size, image_size)),
+                T.Resize((resize, resize)),
                 T.ToTensor(),
             ]
         )

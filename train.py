@@ -19,17 +19,15 @@ import constants as args
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 
 
 def train(model, train_loader, val_loader, device):
     loss_fn = nn.CrossEntropyLoss().to(device)
-    optim = torch.optim.Adam(
-        model.parameters(), betas=(0.9, 0.999), weight_decay=0.9, lr=args.lr
-    )
+    optim = torch.optim.AdamW(model.parameters(), lr=args.lr)
     scheduler = lr_scheduler.CosineAnnealingLR(optim, T_max=args.epochs, eta_min=1e-7)
 
-    best_loss, best_model = 0, model
+    best_loss, best_model = 1e8, model
     for epoch in range(args.epochs):
         train_loss, val_loss = 0, 0
         model.train()
@@ -70,7 +68,7 @@ def main():
     dataset = HAM10000(
         image_dir=args.image_dir,
         label_path=args.label_path,
-        image_size=args.image_size,
+        resize=args.resize,
     )
 
     train_data, val_data = train_test_split(dataset)
@@ -104,13 +102,12 @@ def main():
     if args.use_checkpoint and os.path.exists(args.checkpoint):
         model.load_state_dict(torch.load(args.checkpoint, map_location=device))
 
-    # model = nn.DataParallel(model)
+    model = nn.DataParallel(model)
     model.to(device)
     model.apply(init_weight)
 
     best_model = train(model, train_loader, val_loader, device)
-    # torch.save(best_model.module.state_dict(), args.checkpoint)
-    torch.save(best_model.state_dict(), args.checkpoint)
+    torch.save(best_model.module.state_dict(), args.checkpoint)
 
 
 if __name__ == "__main__":

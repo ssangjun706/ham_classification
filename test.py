@@ -34,8 +34,9 @@ def main():
     dataset = HAM10000(
         image_dir=args.image_dir,
         label_path=args.label_path,
-        image_size=args.image_size,
+        resize=args.resize,
         train=False,
+        ratio=0.81,
     )
 
     test_loader = DataLoader(

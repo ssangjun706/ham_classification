@@ -60,23 +60,28 @@ class ViT(nn.Module):
         super().__init__()
         self.h_dim = h_dim
 
-        image_size = 224
-
         seq_len = (image_size // patch_size) ** 2
         in_features = (patch_size**2) * 32
 
         # 450 -> 224
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 32, 3),
+            nn.Conv2d(3, 32, 3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, 3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, 3),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(2),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
         )
 
         self.patch_embedding = nn.Sequential(
             nn.Unfold(kernel_size=patch_size, stride=patch_size),
             Reshape((seq_len, in_features)),
-            nn.LayerNorm(in_features),
             nn.Linear(in_features, h_dim),
             nn.LayerNorm(h_dim),
             nn.ReLU(),
@@ -86,7 +91,12 @@ class ViT(nn.Module):
         self.pe = PositionalEmbedding(seq_len + 1, h_dim)
 
         self.transformer = Transformer(h_dim, num_layers, nhead, 64, mlp_dim)
-        self.mlp = nn.Linear(h_dim, num_classes)
+        self.mlp = nn.Sequential(
+            nn.Linear(h_dim, 128),
+            nn.LayerNorm(128),
+            nn.ReLU(),
+            nn.Linear(128, num_classes),
+        )
 
     def forward(self, x):
         x = self.conv(x)
